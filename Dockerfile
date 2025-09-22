@@ -2,20 +2,23 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Make sure lockfile is copied too
+# Install build tools for Alpine (just in case some deps need native compile)
+RUN apk add --no-cache python3 make g++
+
+# Copy package manifests
 COPY package*.json ./
 
-# Ensure devDependencies are installed
+# Install dependencies including devDependencies (needed for vite build)
 ENV NODE_ENV=development
 RUN npm install
 
-# Copy source after deps
+# Copy source code
 COPY . .
 
-# Run Vite build
+# Build the app with Vite
 RUN npm run build
 
-# Run stage
+# Run stage (production, no Node/npm needed)
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
